@@ -1,0 +1,4 @@
+[submodule "external/stm_vl530lx_lib"]
+	path = external/stm_vl530lx_lib
+	url = https://github.com/rapyuta-robotics/stm_vl530lx_lib.git
+	branch = rr-devel
