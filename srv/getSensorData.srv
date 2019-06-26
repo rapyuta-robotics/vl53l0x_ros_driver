@@ -1,5 +1,5 @@
-#empty
 ---
-int32 Left
-int32 Middle
-int32 Right
+int32 One
+int32 Two
+int32 Three
+int32 Four

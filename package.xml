@@ -1,6 +1,6 @@
 <?xml version="2"?>
 <package>
-  <name>vl53l0x</name>
+  <name>vl53l0x_driver</name>
   <version>0.0.1</version>
   <description> ROS node for reading data from the multiple VL53L0X ToF sensor using MCP23017 I2C GPIO </description>
 
