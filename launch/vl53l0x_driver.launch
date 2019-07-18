@@ -1,0 +1,4 @@
+<launch>
+	<node pkg="vl53l0x_driver" type="measure_proximity_node" name="measure_proximity_node" >
+  	</node>
+</launch>
