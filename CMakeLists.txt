@@ -27,12 +27,12 @@ catkin_package(INCLUDE_DIRS inc
 
 include_directories(inc/ ${catkin_INCLUDE_DIRS} )
 
-add_executable(measure3sensors_node 
+add_executable(measure_proximity_node
   src/vl53l0x_driver.cpp
   src/mcp23017.c
 )
 
-target_link_libraries(measure3sensors_node
+target_link_libraries(measure_proximity_node
   vl53l0x
   soc
   ${catkin_LIBRARIES}
