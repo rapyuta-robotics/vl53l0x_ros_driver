@@ -19,22 +19,23 @@ extern "C" {
 #define I2C_BUS_INSTANCE 10
 #define VL53L0X_DEFAULT_ADDR 0x29
 #define NUM_SENSORS 4
-int VL53L0X_XSHUT_MCP23xx_IO[4];
-int VL53L0X_ADDR[4];
+
+int VL53L0X_XSHUT_MCP23xx_IO[NUM_SENSORS];
+int VL53L0X_ADDR[NUM_SENSORS];
 VL53L0X_Dev_t Sensors[NUM_SENSORS];
 VL53L0X_Dev_t *pSensors[NUM_SENSORS];
 VL53L0X_RangingMeasurementData_t SensorsRangingMeasurementData[NUM_SENSORS];
 
-void declare() {
-  for (int i = 0; i < 15; i++)
+void initialize() {
+  for (int i = 0; i < NUM_SENSORS; i++)
     VL53L0X_XSHUT_MCP23xx_IO[i] = i;
 
   int i, j;
-  for (i = 0, j = 0x21; i < 4; j++, i++) {
+  for (i = 0, j = 0x21; i < NUM_SENSORS; j++, i++) {
     VL53L0X_ADDR[i] = j;
   }
 
-  for (int i = 1; i <= NUM_SENSORS; i++) {
+  for (int i = 0; i < NUM_SENSORS; i++) {
     pSensors[i] = &Sensors[i];
   }
 }
@@ -53,7 +54,7 @@ void GPIO_Setup() {
   if (i2c_mcp23017 == NULL)
     return;
 
-  for (int i = 1; i <= NUM_SENSORS; i++) {
+  for (int i = 0; i < NUM_SENSORS; i++) {
     mcp_pinMode(i2c_mcp23017, VL53L0X_XSHUT_MCP23xx_IO[i], OUTPUT);
     mcp_digitalWrite(i2c_mcp23017, VL53L0X_XSHUT_MCP23xx_IO[i], LOW);
   }
@@ -66,7 +67,7 @@ void Sensor_Setup() {
 
   i2c_vl53l0x = libsoc_i2c_init(I2C_BUS_INSTANCE, VL53L0X_DEFAULT_ADDR);
 
-  for (int i = 1; i <= NUM_SENSORS; i++) {
+  for (int i = 0; i < NUM_SENSORS; i++) {
     mcp_digitalWrite(i2c_mcp23017, VL53L0X_XSHUT_MCP23xx_IO[i], HIGH);
     addr_reg[1] = VL53L0X_ADDR[i];
     libsoc_i2c_write(i2c_vl53l0x, addr_reg, 2);
@@ -101,7 +102,8 @@ void Sensor_Calibration(VL53L0X_Dev_t *pDevice) {
 }
 
 void Start_Ranging() {
-  for (int i = 1; i <= NUM_SENSORS; i++) {
+
+  for (int i = 0; i < NUM_SENSORS; i++) {
     VL53L0X_PerformSingleRangingMeasurement(pSensors[i],
                                             &SensorsRangingMeasurementData[i]);
     sensorData.Sensor_suite[i] =
@@ -110,7 +112,7 @@ void Start_Ranging() {
 }
 
 int main(int argc, char **argv) {
-  declare();
+  initialize();
   ros::init(argc, argv, "vl53l0x_driver");
   ros::NodeHandle nh;
   ros::Publisher pub =
@@ -120,7 +122,7 @@ int main(int argc, char **argv) {
   Sensor_Setup();
 
   // Step 4 :: Calibration Sensor and Get Sensor Value
-  for (int i = 1; i <= NUM_SENSORS; i++) {
+  for (int i = 0; i < NUM_SENSORS; i++) {
     Sensor_Calibration(pSensors[i]);
   }
   while (ros::ok()) {
@@ -132,7 +134,7 @@ int main(int argc, char **argv) {
   VL53L0X_i2c_close();
 
   // Power-off the sensors
-  for (int i = 1; i <= NUM_SENSORS; i++) {
+  for (int i = 0; i < NUM_SENSORS; i++) {
     mcp_digitalWrite(i2c_mcp23017, VL53L0X_XSHUT_MCP23xx_IO[i], LOW);
   }
   mcp23xx_close(i2c_mcp23017);
