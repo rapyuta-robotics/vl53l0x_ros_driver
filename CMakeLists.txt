@@ -13,16 +13,12 @@ add_message_files(FILES
   vl53l0x.msg
 )
 
-add_service_files(FILES
-  getSensorData.srv
-)
-
 generate_messages(DEPENDENCIES
    std_msgs
 )
 
 catkin_package(INCLUDE_DIRS inc
-  CATKIN_DEPENDS roscpp
+  CATKIN_DEPENDS roscpp message_runtime
 )
 
 include_directories(inc/ ${catkin_INCLUDE_DIRS} )
