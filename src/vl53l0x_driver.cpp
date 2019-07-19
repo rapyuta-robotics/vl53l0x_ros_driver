@@ -10,7 +10,6 @@ extern "C" {
 }
 
 #include "vl53l0x_api.h"
-#include "vl53l0x_driver/vl53l0x.h"
 #include "vl53l0x_platform.h"
 #define MCP_ADDRESS 0x20
 #define VL53L0X_DEFAULT_ADDR 0x29
