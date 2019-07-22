@@ -25,16 +25,12 @@ int i2c_bus_instance;
 std::string i2c_bus_path;
 
 void initialize() {
-  for (int i = 0; i < NUM_SENSORS; i++)
-    VL53L0X_XSHUT_MCP23xx_IO[i] = i;
-
-  for (int i = 0, j = 0x21; i < NUM_SENSORS; j++, i++) {
-    VL53L0X_ADDR[i] = j;
-  }
-
   for (int i = 0; i < NUM_SENSORS; i++) {
+    VL53L0X_XSHUT_MCP23xx_IO[i] = i;
     pSensors[i] = &Sensors[i];
   }
+  for (int i = 0, j = 0x21; i < NUM_SENSORS; j++, i++)
+    VL53L0X_ADDR[i] = j;
 }
 
 uint32_t refSpadCount;
