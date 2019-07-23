@@ -7,7 +7,7 @@
 1. [Install ROS Melodic](http://wiki.ros.org/melodic/Installation/Ubuntu) and the following build tools.
 
         sudo apt-get install python-wstool python-catkin-tools 
-        
+	
 1. Re-use or create a catkin workspace:
 
         export CATKIN_WS=~/ws_catkin
@@ -35,6 +35,8 @@
 
 ### Read data from the sensors
 
-        roslaunch vl53l0x_driver vl53l0x_driver.launch
+1. 
+
+                roslaunch vl53l0x_driver vl53l0x_driver.launch
 
 
