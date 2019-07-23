@@ -35,7 +35,6 @@
 
 ### Read data from the sensors
 
-1. 
+        roslaunch vl53l0x_driver vl53l0x_driver.launch
 
-                roslaunch vl53l0x_driver vl53l0x_driver.launch
 
