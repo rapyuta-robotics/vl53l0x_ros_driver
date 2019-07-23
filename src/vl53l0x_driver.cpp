@@ -100,6 +100,11 @@ void Start_Ranging(int i) {
   sensor_msg_array[i].proximity =
       (SensorsRangingMeasurementData[i].RangeMilliMeter) / 1000;
   sensor_msg_array[i].header.stamp = ros::Time::now();
+  std::string frame = "frame_sensor";
+  sensor_msg_array[i].header.frame_id = frame + std::to_string(i + 1);
+  sensor_msg_array[i].field_of_view = 0.436332;
+  sensor_msg_array[i].min_range = 0.03;
+  sensor_msg_array[i].max_range = 2.0;
 }
 
 int main(int argc, char **argv) {
