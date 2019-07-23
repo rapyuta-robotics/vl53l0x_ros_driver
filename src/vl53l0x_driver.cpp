@@ -1,17 +1,17 @@
 #include <cstring>
 #include <ros/ros.h>
-#include <std_msgs/Int16.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 extern "C" {
 #include "mcp23017.h"
 }
-
 #include "vl53l0x_api.h"
 #include "vl53l0x_driver/vl53l0x.h"
 #include "vl53l0x_platform.h"
+
 #define MCP_ADDRESS 0x20
 #define VL53L0X_DEFAULT_ADDR 0x29
 #define NUM_SENSORS 4
@@ -29,9 +29,8 @@ void initialize() {
   for (int i = 0; i < NUM_SENSORS; i++) {
     VL53L0X_XSHUT_MCP23xx_IO[i] = i;
     pSensors[i] = &Sensors[i];
-  }
-  for (int i = 0, j = 0x21; i < NUM_SENSORS; j++, i++)
-    VL53L0X_ADDR[i] = j;
+    VL53L0X_ADDR[i] = (0x21 + i);
+}
 }
 
 uint32_t refSpadCount;
@@ -93,12 +92,18 @@ void Sensor_Calibration(VL53L0X_Dev_t *pDevice) {
   VL53L0X_SetVcselPulsePeriod(pDevice, VL53L0X_VCSEL_PERIOD_FINAL_RANGE, 14);
 }
 
+int check_device_connection(int _file_descriptor) {
+  struct stat device_status;
+  fstat(_file_descriptor, &device_status);
+  return device_status.st_nlink;
+}
+
 void Start_Ranging(int i) {
 
   VL53L0X_PerformSingleRangingMeasurement(pSensors[i],
                                           &SensorsRangingMeasurementData[i]);
   sensor_msg_array[i].proximity =
-      float(SensorsRangingMeasurementData[i].RangeMilliMeter)/1000.0;
+      float(SensorsRangingMeasurementData[i].RangeMilliMeter) / 1000.0;
   sensor_msg_array[i].header.stamp = ros::Time::now();
   std::string frame = "frame_sensor";
   sensor_msg_array[i].header.frame_id = frame + std::to_string(i + 1);
@@ -118,19 +123,17 @@ int main(int argc, char **argv) {
 
   ros::Publisher sensor_pub_array[NUM_SENSORS];
   std::string name = "sensor_data_";
+
   for (int i = 0; i < NUM_SENSORS; i++) {
     std::string result = name + std::to_string(i + 1);
-    sensor_pub_array[i] = nh.advertise<vl53l0x_driver::vl53l0x>(result, 1000);
+    sensor_pub_array[i] = nh.advertise<vl53l0x_driver::vl53l0x>(result, 10);
+    Sensor_Calibration(pSensors[i]);
   }
 
   GPIO_Setup();
   Sensor_Setup();
 
-  // Step 4 :: Calibration Sensor and Get Sensor Value
-  for (int i = 0; i < NUM_SENSORS; i++) {
-    Sensor_Calibration(pSensors[i]);
-  }
-  while (ros::ok()) {
+  while (ros::ok() and check_device_connection(pSensors[0]->fd)) {
     for (int i = 0; i < NUM_SENSORS; i++) {
       Start_Ranging(i);
       sensor_pub_array[i].publish(sensor_msg_array[i]);
