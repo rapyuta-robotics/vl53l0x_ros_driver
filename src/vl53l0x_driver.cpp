@@ -124,14 +124,14 @@ int main(int argc, char **argv) {
   ros::Publisher sensor_pub_array[NUM_SENSORS];
   std::string name = "sensor_data_";
 
+  GPIO_Setup();
+  Sensor_Setup();
+
   for (int i = 0; i < NUM_SENSORS; i++) {
     std::string result = name + std::to_string(i + 1);
     sensor_pub_array[i] = nh.advertise<vl53l0x_driver::vl53l0x>(result, 10);
     Sensor_Calibration(pSensors[i]);
   }
-
-  GPIO_Setup();
-  Sensor_Setup();
 
   while (ros::ok() and check_device_connection(pSensors[0]->fd)) {
     for (int i = 0; i < NUM_SENSORS; i++) {
