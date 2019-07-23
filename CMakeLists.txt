@@ -9,6 +9,14 @@ find_package(catkin REQUIRED
   message_generation
 )
 
+add_message_files(FILES
+  vl53l0x.msg
+)
+
+generate_messages(DEPENDENCIES
+   std_msgs
+)
+
 catkin_package(INCLUDE_DIRS inc
   CATKIN_DEPENDS roscpp 
 )

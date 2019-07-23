@@ -10,6 +10,7 @@ extern "C" {
 }
 
 #include "vl53l0x_api.h"
+#include "vl53l0x_driver/vl53l0x.h"
 #include "vl53l0x_platform.h"
 #define MCP_ADDRESS 0x20
 #define VL53L0X_DEFAULT_ADDR 0x29
@@ -20,7 +21,7 @@ int VL53L0X_ADDR[NUM_SENSORS];
 VL53L0X_Dev_t Sensors[NUM_SENSORS];
 VL53L0X_Dev_t *pSensors[NUM_SENSORS];
 VL53L0X_RangingMeasurementData_t SensorsRangingMeasurementData[NUM_SENSORS];
-std_msgs::Int16 sensor_msg_array[NUM_SENSORS];
+vl53l0x_driver::vl53l0x sensor_msg_array[NUM_SENSORS];
 int i2c_bus_instance;
 std::string i2c_bus_path;
 
@@ -96,7 +97,9 @@ void Start_Ranging(int i) {
 
   VL53L0X_PerformSingleRangingMeasurement(pSensors[i],
                                           &SensorsRangingMeasurementData[i]);
-  sensor_msg_array[i].data = SensorsRangingMeasurementData[i].RangeMilliMeter;
+  sensor_msg_array[i].proximity =
+      (SensorsRangingMeasurementData[i].RangeMilliMeter) / 1000;
+  sensor_msg_array[i].header.stamp = ros::Time::now();
 }
 
 int main(int argc, char **argv) {
@@ -112,7 +115,7 @@ int main(int argc, char **argv) {
   std::string name = "sensor_data_";
   for (int i = 0; i < NUM_SENSORS; i++) {
     std::string result = name + std::to_string(i + 1);
-    sensor_pub_array[i] = nh.advertise<std_msgs::Int16>(result, 1000);
+    sensor_pub_array[i] = nh.advertise<vl53l0x_driver::vl53l0x>(result, 1000);
   }
 
   GPIO_Setup();
