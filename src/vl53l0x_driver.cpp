@@ -30,7 +30,7 @@ void initialize() {
     VL53L0X_XSHUT_MCP23xx_IO[i] = i;
     pSensors[i] = &Sensors[i];
     VL53L0X_ADDR[i] = (0x21 + i);
-}
+  }
 }
 
 uint32_t refSpadCount;
@@ -40,24 +40,27 @@ uint8_t PhaseCal;
 i2c *i2c_mcp23017;
 i2c *i2c_vl53l0x;
 
-void GPIO_Setup() {
+int GPIO_Setup() {
   i2c_mcp23017 = mcp23xx_init(i2c_bus_instance, MCP_ADDRESS);
   if (i2c_mcp23017 == NULL)
-    return;
+    return -1;
 
   for (int i = 0; i < NUM_SENSORS; i++) {
     mcp_pinMode(i2c_mcp23017, VL53L0X_XSHUT_MCP23xx_IO[i], OUTPUT);
     mcp_digitalWrite(i2c_mcp23017, VL53L0X_XSHUT_MCP23xx_IO[i], LOW);
   }
+  ROS_INFO("Finished GPIO_Setup");
+  return 0;
 }
 
-void Sensor_Setup() {
+int Sensor_Setup() {
   /* multi sensors init START */
   uint8_t addr_reg[2] = {0};
   addr_reg[0] = VL53L0X_REG_I2C_SLAVE_DEVICE_ADDRESS;
 
   i2c_vl53l0x = libsoc_i2c_init(i2c_bus_instance, VL53L0X_DEFAULT_ADDR);
-
+  if (i2c_vl53l0x == NULL)
+    return -1;
   for (int i = 0; i < NUM_SENSORS; i++) {
     mcp_digitalWrite(i2c_mcp23017, VL53L0X_XSHUT_MCP23xx_IO[i], HIGH);
     addr_reg[1] = VL53L0X_ADDR[i];
@@ -74,6 +77,8 @@ void Sensor_Setup() {
 
   libsoc_i2c_free(i2c_vl53l0x);
   /* multi sensors init END */
+  ROS_INFO("Finished Sensor_Setup");
+  return 0;
 }
 
 void Sensor_Calibration(VL53L0X_Dev_t *pDevice) {
@@ -124,22 +129,24 @@ int main(int argc, char **argv) {
   ros::Publisher sensor_pub_array[NUM_SENSORS];
   std::string name = "sensor_data_";
 
-  GPIO_Setup();
-  Sensor_Setup();
-
-  for (int i = 0; i < NUM_SENSORS; i++) {
-    std::string result = name + std::to_string(i + 1);
-    sensor_pub_array[i] = nh.advertise<vl53l0x_driver::vl53l0x>(result, 10);
-    Sensor_Calibration(pSensors[i]);
-  }
-
-  while (ros::ok() and check_device_connection(pSensors[0]->fd)) {
-    for (int i = 0; i < NUM_SENSORS; i++) {
-      Start_Ranging(i);
-      sensor_pub_array[i].publish(sensor_msg_array[i]);
-      ros::spinOnce();
-    }
-  }
+  if (GPIO_Setup() == 0) {
+    if (Sensor_Setup() == 0) {
+      for (int i = 0; i < NUM_SENSORS; i++) {
+        std::string result = name + std::to_string(i + 1);
+        sensor_pub_array[i] = nh.advertise<vl53l0x_driver::vl53l0x>(result, 10);
+        Sensor_Calibration(pSensors[i]);
+      }
+      while (ros::ok() and check_device_connection(pSensors[0]->fd)) {
+        for (int i = 0; i < NUM_SENSORS; i++) {
+          Start_Ranging(i);
+          sensor_pub_array[i].publish(sensor_msg_array[i]);
+          ros::spinOnce();
+        }
+      }
+    } else
+      ROS_INFO("Sensor Setup failed");
+  } else
+    ROS_INFO("GPIO Setup failed");
 
   VL53L0X_i2c_close();
 
