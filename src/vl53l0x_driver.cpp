@@ -98,7 +98,7 @@ void Start_Ranging(int i) {
   VL53L0X_PerformSingleRangingMeasurement(pSensors[i],
                                           &SensorsRangingMeasurementData[i]);
   sensor_msg_array[i].proximity =
-      (SensorsRangingMeasurementData[i].RangeMilliMeter) / 1000;
+      float(SensorsRangingMeasurementData[i].RangeMilliMeter)/1000.0;
   sensor_msg_array[i].header.stamp = ros::Time::now();
   std::string frame = "frame_sensor";
   sensor_msg_array[i].header.frame_id = frame + std::to_string(i + 1);
