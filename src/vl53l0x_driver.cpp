@@ -107,7 +107,7 @@ int check_device_connection(int _file_descriptor) {
 }
 
 void thread1() {
-  while (ros::ok()) {
+  while (ros::ok() and check_device_connection(pSensors[0]->fd)) {
     VL53L0X_PerformSingleRangingMeasurement(pSensors[0],
                                             &SensorsRangingMeasurementData[0]);
     sensor_msg_array[0].proximity =
@@ -124,7 +124,7 @@ void thread1() {
 }
 
 void thread2() {
-  while (ros::ok()) {
+  while (ros::ok() and check_device_connection(pSensors[0]->fd)) {
     VL53L0X_PerformSingleRangingMeasurement(pSensors[1],
                                             &SensorsRangingMeasurementData[1]);
     sensor_msg_array[1].proximity =
@@ -141,7 +141,7 @@ void thread2() {
 }
 
 void thread3() {
-  while (ros::ok()) {
+  while (ros::ok() and check_device_connection(pSensors[0]->fd)) {
     VL53L0X_PerformSingleRangingMeasurement(pSensors[2],
                                             &SensorsRangingMeasurementData[2]);
     sensor_msg_array[2].proximity =
@@ -158,7 +158,7 @@ void thread3() {
 }
 
 void thread4() {
-  while (ros::ok()) {
+  while (ros::ok() and check_device_connection(pSensors[0]->fd)) {
     VL53L0X_PerformSingleRangingMeasurement(pSensors[3],
                                             &SensorsRangingMeasurementData[3]);
     sensor_msg_array[3].proximity =
