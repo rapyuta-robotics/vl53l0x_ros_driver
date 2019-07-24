@@ -109,19 +109,21 @@ int check_device_connection(int _file_descriptor) {
   return device_status.st_nlink;
 }
 
-void thread(int i) {
+void measure_and_publish(int sensor_num) {
   while (ros::ok() and check_device_connection(pSensors[0]->fd)) {
-    VL53L0X_PerformSingleRangingMeasurement(pSensors[i],
-                                            &SensorsRangingMeasurementData[i]);
-    sensor_msg_array[i].proximity =
-        float(SensorsRangingMeasurementData[i].RangeMilliMeter) / 1000.0;
-    sensor_msg_array[i].header.stamp = ros::Time::now();
+    VL53L0X_PerformSingleRangingMeasurement(
+        pSensors[sensor_num], &SensorsRangingMeasurementData[sensor_num]);
+    sensor_msg_array[sensor_num].proximity =
+        float(SensorsRangingMeasurementData[sensor_num].RangeMilliMeter) /
+        1000.0;
+    sensor_msg_array[sensor_num].header.stamp = ros::Time::now();
     std::string frame = "sensor";
-    sensor_msg_array[i].header.frame_id = frame + std::to_string(i + 1);
-    sensor_msg_array[i].field_of_view = FIELD_OF_VIEW;
-    sensor_msg_array[i].min_range = MIN_RANGE;
-    sensor_msg_array[i].max_range = MAX_RANGE;
-    sensor_pub_array[i].publish(sensor_msg_array[0]);
+    sensor_msg_array[sensor_num].header.frame_id =
+        frame + std::to_string(sensor_num + 1);
+    sensor_msg_array[sensor_num].field_of_view = FIELD_OF_VIEW;
+    sensor_msg_array[sensor_num].min_range = MIN_RANGE;
+    sensor_msg_array[sensor_num].max_range = MAX_RANGE;
+    sensor_pub_array[sensor_num].publish(sensor_msg_array[sensor_num]);
     ros::spinOnce();
   }
 }
@@ -143,13 +145,12 @@ int main(int argc, char **argv) {
         sensor_pub_array[i] = nh.advertise<vl53l0x_driver::vl53l0x>(result, 10);
         Sensor_Calibration(pSensors[i]);
       }
-      ros::AsyncSpinner spinner(NUM_SENSORS); // Use 4 threads
+      ros::AsyncSpinner spinner(NUM_SENSORS);
       spinner.start();
       for (int i = 0; i < NUM_SENSORS; i++) {
-        boost::thread(boost::bind(thread, i));
+        boost::thread(boost::bind(measure_and_publish, i));
       }
       ros::waitForShutdown();
-
     } else
       ROS_INFO("Sensor Setup failed");
   } else
