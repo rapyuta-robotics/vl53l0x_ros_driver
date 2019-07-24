@@ -1,3 +1,5 @@
+#include <boost/thread.hpp>
+#include <chrono>
 #include <cstring>
 #include <ros/ros.h>
 #include <stdio.h>
@@ -15,6 +17,9 @@ extern "C" {
 #define MCP_ADDRESS 0x20
 #define VL53L0X_DEFAULT_ADDR 0x29
 #define NUM_SENSORS 4
+#define FIELD_OF_VIEW 0.436332
+#define MIN_RANGE 0.03
+#define MAX_RANGE 2.0
 
 int VL53L0X_XSHUT_MCP23xx_IO[NUM_SENSORS];
 int VL53L0X_ADDR[NUM_SENSORS];
@@ -24,6 +29,7 @@ VL53L0X_RangingMeasurementData_t SensorsRangingMeasurementData[NUM_SENSORS];
 vl53l0x_driver::vl53l0x sensor_msg_array[NUM_SENSORS];
 int i2c_bus_instance;
 std::string i2c_bus_path;
+ros::Publisher sensor_pub_array[NUM_SENSORS];
 
 void initialize() {
   for (int i = 0; i < NUM_SENSORS; i++) {
@@ -103,18 +109,23 @@ int check_device_connection(int _file_descriptor) {
   return device_status.st_nlink;
 }
 
-void Start_Ranging(int i) {
-
-  VL53L0X_PerformSingleRangingMeasurement(pSensors[i],
-                                          &SensorsRangingMeasurementData[i]);
-  sensor_msg_array[i].proximity =
-      float(SensorsRangingMeasurementData[i].RangeMilliMeter) / 1000.0;
-  sensor_msg_array[i].header.stamp = ros::Time::now();
-  std::string frame = "sensor";
-  sensor_msg_array[i].header.frame_id = frame + std::to_string(i + 1);
-  sensor_msg_array[i].field_of_view = 0.436332;
-  sensor_msg_array[i].min_range = 0.03;
-  sensor_msg_array[i].max_range = 2.0;
+void measure_and_publish(int sensor_num) {
+  while (ros::ok() and check_device_connection(pSensors[0]->fd)) {
+    VL53L0X_PerformSingleRangingMeasurement(
+        pSensors[sensor_num], &SensorsRangingMeasurementData[sensor_num]);
+    sensor_msg_array[sensor_num].proximity =
+        float(SensorsRangingMeasurementData[sensor_num].RangeMilliMeter) /
+        1000.0;
+    sensor_msg_array[sensor_num].header.stamp = ros::Time::now();
+    std::string frame = "sensor";
+    sensor_msg_array[sensor_num].header.frame_id =
+        frame + std::to_string(sensor_num + 1);
+    sensor_msg_array[sensor_num].field_of_view = FIELD_OF_VIEW;
+    sensor_msg_array[sensor_num].min_range = MIN_RANGE;
+    sensor_msg_array[sensor_num].max_range = MAX_RANGE;
+    sensor_pub_array[sensor_num].publish(sensor_msg_array[sensor_num]);
+    ros::spinOnce();
+  }
 }
 
 int main(int argc, char **argv) {
@@ -125,8 +136,6 @@ int main(int argc, char **argv) {
   nh.getParam("/measure_proximity_node/i2c_bus_instance", i2c_bus_instance);
   ROS_INFO("i2c_bus_instance: %d", i2c_bus_instance);
   i2c_bus_path = "/dev/i2c-" + std::to_string(i2c_bus_instance);
-
-  ros::Publisher sensor_pub_array[NUM_SENSORS];
   std::string name = "sensor_data_";
 
   if (GPIO_Setup() == 0) {
@@ -136,13 +145,12 @@ int main(int argc, char **argv) {
         sensor_pub_array[i] = nh.advertise<vl53l0x_driver::vl53l0x>(result, 10);
         Sensor_Calibration(pSensors[i]);
       }
-      while (ros::ok() and check_device_connection(pSensors[0]->fd)) {
-        for (int i = 0; i < NUM_SENSORS; i++) {
-          Start_Ranging(i);
-          sensor_pub_array[i].publish(sensor_msg_array[i]);
-          ros::spinOnce();
-        }
+      ros::AsyncSpinner spinner(NUM_SENSORS);
+      spinner.start();
+      for (int i = 0; i < NUM_SENSORS; i++) {
+        boost::thread(boost::bind(measure_and_publish, i));
       }
+      ros::waitForShutdown();
     } else
       ROS_INFO("Sensor Setup failed");
   } else
