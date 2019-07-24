@@ -39,6 +39,8 @@
         source $CATKIN_WS/devel/setup.bash
 
 ### Read data from the sensors
-1. Run the launch 
+1. Run the launch:
 
         roslaunch vl53l0x_driver vl53l0x_driver.launch 
+
+
