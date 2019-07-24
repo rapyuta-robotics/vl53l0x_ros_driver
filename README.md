@@ -1,7 +1,5 @@
 # vl530lx-ROS-driver
 
-## Install directly
-
 ### Build from Source
 
 1. [Install ROS Melodic](http://wiki.ros.org/melodic/Installation/Ubuntu) and the following build tools.
@@ -14,9 +12,9 @@
         mkdir -p $CATKIN_WS/src
         cd $CATKIN_WS/src
 
-1. Download the repository:
+1. Download the repository and the submodules:
 
-        git clone git@github.com:rapyuta-robotics/vl53l0x_ros_driver.git
+        git clone --recursive git@github.com:rapyuta-robotics/vl53l0x_ros_driver.git
         wstool init .
         rosdep install --from-paths . --ignore-src --rosdistro $ROS_DISTRO
 
@@ -29,11 +27,6 @@
         make
         make install
 
-1. Update the submodules:
-
-        cd $CATKIN_WS/src/vl53l0x_ros_driver
-        git submodule init && git submodule update
-
 1. Configure and build the workspace:
 
         cd $CATKIN_WS
@@ -43,7 +36,7 @@
 
 1. Source the workspace.
 
-        source ./devel/setup.bash
+        source $CATKIN_WS/devel/setup.bash
 
 ### Read data from the sensors
 1. Run the launch 
