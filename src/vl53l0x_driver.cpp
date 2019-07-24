@@ -110,7 +110,7 @@ int check_device_connection(int _file_descriptor) {
 }
 
 void thread(int i) {
-  while (ros::ok() and check_device_connection(pSensors[i]->fd)) {
+  while (ros::ok() and check_device_connection(pSensors[0]->fd)) {
     VL53L0X_PerformSingleRangingMeasurement(pSensors[i],
                                             &SensorsRangingMeasurementData[i]);
     sensor_msg_array[i].proximity =
