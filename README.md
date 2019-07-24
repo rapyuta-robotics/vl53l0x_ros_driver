@@ -43,4 +43,23 @@
 
         roslaunch vl53l0x_driver vl53l0x_driver.launch 
 
+1. Read the ROS message of sensor 1:
+
+		➜  ~ rostopic echo /sensor_data_1
+		header: 
+		  seq: 11
+		  stamp: 
+		    secs: 1563942747
+		    nsecs: 325853385
+		  frame_id: "sensor1"
+		proximity: 8.19099998474
+		field_of_view: 0.436331987381
+		min_range: 0.0299999993294
+		max_range: 2.0
+		---
+
+	
+	
+
+
 
