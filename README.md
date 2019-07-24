@@ -19,12 +19,24 @@
         git clone git@github.com:rapyuta-robotics/vl53l0x_ros_driver.git
         wstool init .
         rosdep install --from-paths . --ignore-src --rosdistro $ROS_DISTRO
-        
-       
+
+1. Clone and compile libsoc:
+
+        git clone https://github.com/jackmitch/libsoc.git libsoc.git
+        cd libsoc.git
+        autoreconf -i      
+        ./configure
+        make
+        make install
+
+1. Update the submodules:
+
+        cd $CATKIN_WS/src/vl53l0x_ros_driver
+        git submodule init && git submodule update
 
 1. Configure and build the workspace:
 
-        cd ..
+        cd $CATKIN_WS
         catkin config --extend /opt/ros/melodic --cmake-args -DCMAKE_BUILD_TYPE=Release
         catkin build 
  
