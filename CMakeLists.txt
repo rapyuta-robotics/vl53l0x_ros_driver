@@ -3,10 +3,15 @@ project(vl53l0x_driver)
 
 add_subdirectory(external/stm_vl530lx_lib EXCLUDE_FROM_ALL)
 
-find_package(catkin REQUIRED
+set(PKG_DEPS
   roscpp
   std_msgs
   message_generation
+  rr_hw_interface
+)
+
+
+find_package(catkin REQUIRED COMPONENTS ${PKG_DEPS}
 )
 
 add_message_files(FILES
@@ -18,14 +23,13 @@ generate_messages(DEPENDENCIES
 )
 
 catkin_package(INCLUDE_DIRS inc
-  CATKIN_DEPENDS roscpp 
+  CATKIN_DEPENDS ${PKG_DEPS}
 )
 
-include_directories(inc/ ${catkin_INCLUDE_DIRS} )
+include_directories(inc ${catkin_INCLUDE_DIRS} )
 
 add_executable(measure_proximity_node
   src/vl53l0x_driver.cpp
-  src/mcp23017.c
 )
 
 target_link_libraries(measure_proximity_node
