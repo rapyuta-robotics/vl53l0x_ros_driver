@@ -51,27 +51,10 @@ i2c* i2c_vl53l0x;
 int GPIO_Setup(rapyuta::McpGpio vlx1, rapyuta::McpGpio vlx2, rapyuta::McpGpio vlx3, rapyuta::McpGpio vlx4)
 {
     ROS_INFO("Entered gpio setup");
-    // i2c_mcp23017 = mcp23xx_init(i2c_bus_instance, MCP_ADDRESS);
-    // if (i2c_mcp23017 == NULL)
-    //   return -1;
-    vlx1.pinmode(OUTPUT);
-    ROS_INFO("gpio setup : First pinmode completed");
     vlx1.set(LOW);
-    ROS_INFO("gpio setup : First pin set low completed");
-
-    vlx2.pinmode(OUTPUT);
-    ROS_INFO("gpio setup : second pinmode completed");
     vlx2.set(LOW);
-    ROS_INFO("gpio setup : second pin set low completed");
-    vlx3.pinmode(OUTPUT);
     vlx3.set(LOW);
-    vlx4.pinmode(OUTPUT);
     vlx4.set(LOW);
-    ROS_INFO("all pins gpio setup completed");
-    // for (int i = 0; i < NUM_SENSORS; i++) {
-    //   mcp_pinMode(i2c_mcp23017, VL53L0X_XSHUT_MCP23xx_IO[i], OUTPUT);
-    //   mcp_digitalWrite(i2c_mcp23017, VL53L0X_XSHUT_MCP23xx_IO[i], LOW);
-    // }
     ROS_INFO("Finished GPIO_Setup");
     return 0;
 }
@@ -186,21 +169,20 @@ int main(int argc, char** argv)
     initialize();
 
     ros::init(argc, argv, "vl53l0x_driver");
-    ros::NodeHandle nh;
-    nh.getParam("/measure_proximity_node/i2c_bus_instance", i2c_bus_instance);
+    ros::NodeHandle nh("~");
+
+    nh.getParam("i2c_bus_instance", i2c_bus_instance);
     ROS_INFO("i2c_bus_instance: %d", i2c_bus_instance);
     i2c_bus_path = "/dev/i2c-" + std::to_string(i2c_bus_instance);
     std::string name = "sensor_data_";
     std::string pin_name = "0";
 
+    rapyuta::McpGpioBoardConfig config(i2c_bus_instance, MCP_ADDRESS);
+
     rapyuta::McpGpio vlx1(std::to_string(0), rapyuta::McpGpio::Type::RR_HW_INTERFACE_OUTPUT);
     rapyuta::McpGpio vlx2(std::to_string(1), rapyuta::McpGpio::Type::RR_HW_INTERFACE_OUTPUT);
     rapyuta::McpGpio vlx3(std::to_string(2), rapyuta::McpGpio::Type::RR_HW_INTERFACE_OUTPUT);
     rapyuta::McpGpio vlx4(std::to_string(3), rapyuta::McpGpio::Type::RR_HW_INTERFACE_OUTPUT);
-    rapyuta::McpGpioBoardConfig config;
-    ROS_INFO("i2c_bus_instance is %d",i2c_bus_instance);
-    config.set_mcp_address(MCP_ADDRESS);
-    config.set_i2c_bus_instance(i2c_bus_instance);
     vlx1.init(config);
     vlx2.init(config);
     vlx3.init(config);

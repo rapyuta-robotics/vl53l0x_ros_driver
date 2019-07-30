@@ -3,6 +3,8 @@ project(vl53l0x_driver)
 
 add_subdirectory(external/stm_vl530lx_lib EXCLUDE_FROM_ALL)
 
+add_compile_options(-std=c++11)
+
 set(PKG_DEPS
   roscpp
   std_msgs
