@@ -101,6 +101,10 @@ public:
         pub();
     }
 
+    std::string get_name(){
+        return _name;
+    }
+
 private:
     std::string _name;
     HI _i2c;

@@ -39,10 +39,11 @@ int Sensor_Setup(std::vector<rapyuta::Vl53l0x<rapyuta::McpGpio, rapyuta::McpGpio
     i2c_vl53l0x = libsoc_i2c_init(i2c_bus_instance, VL53L0X_DEFAULT_ADDR);
     if (i2c_vl53l0x == NULL)
         return -1;
-    ROS_INFO("ready to start sensor setup");
+    ROS_INFO("Start sensor setup");
 
     for (auto itr : sensors) {
         itr->init(addr_reg, i2c_vl53l0x, i2c_bus_path, refSpadCount, isApertureSpads, VhvSettings, PhaseCal);
+        ROS_INFO("Setup No.%s", itr->get_name().c_str());
     }
 
     libsoc_i2c_free(i2c_vl53l0x);
