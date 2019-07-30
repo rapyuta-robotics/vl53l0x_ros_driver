@@ -15,8 +15,8 @@ extern "C" {
 #include "vl53l0x_api.h"
 #include "vl53l0x_platform.h"
 
-#include <rr_hw_interface/gpio/mcp23017_gpio.hpp>
 #include "vl53l0x_driver/vl53l0x.h"
+#include <rr_hw_interface/gpio/mcp23017_gpio.hpp>
 
 #define FIELD_OF_VIEW 0.436332
 #define MIN_RANGE 0.03
@@ -25,7 +25,6 @@ extern "C" {
 namespace rapyuta
 {
 
-
 /*
     vl53l0x interface which have trigger and status gpio class
 */
@@ -33,13 +32,15 @@ template <class HI, class Config>
 class Vl53l0x
 {
 public:
-    Vl53l0x(int pin_num, // VL53L0X_Dev_t sensor,  
+    Vl53l0x(int pin_num, // VL53L0X_Dev_t sensor,
             ros::NodeHandle n, std::string topic_name, Config& config)
-            : _name(std::to_string(pin_num)), _vl53l0xXshutMcp23xxIo(pin_num), _vl53l0xAddr(0x21 + pin_num)
+            : _name(std::to_string(pin_num))
+            , _vl53l0xXshutMcp23xxIo(pin_num)
+            , _vl53l0xAddr(0x21 + pin_num)
             , _i2c(_name, HI::Type::RR_HW_INTERFACE_INPUT)
     {
         _pSensor = &_sensor;
-        _i2c.init(config); 
+        _i2c.init(config);
         _i2c.set(LOW);
         _pub = n.advertise<vl53l0x_driver::vl53l0x>(topic_name, 10);
 
@@ -48,14 +49,12 @@ public:
         _msg.field_of_view = FIELD_OF_VIEW;
         _msg.min_range = MIN_RANGE;
         _msg.max_range = MAX_RANGE;
-
     };
-    ~Vl53l0x(){
-        _i2c.set(LOW);
-    }
+    ~Vl53l0x() { _i2c.set(LOW); }
 
-    bool init(uint8_t *addr_reg, i2c* i2c_vl53l0x, std::string i2c_bus_path, 
-        uint32_t refSpadCount, uint8_t isApertureSpads, uint8_t VhvSettings, uint8_t PhaseCal) { 
+    bool init(uint8_t* addr_reg, i2c* i2c_vl53l0x, std::string i2c_bus_path, uint32_t refSpadCount, uint8_t isApertureSpads, uint8_t VhvSettings,
+            uint8_t PhaseCal)
+    {
         _i2c.set(HIGH);
         addr_reg[1] = _vl53l0xAddr;
         libsoc_i2c_write(i2c_vl53l0x, addr_reg, 2);
@@ -86,19 +85,18 @@ public:
         return device_status.st_nlink;
     }
 
-    vl53l0x_driver::vl53l0x get(){
+    vl53l0x_driver::vl53l0x get()
+    {
         VL53L0X_PerformSingleRangingMeasurement(_pSensor, &_sensorsRangingMeasurementData);
         _msg.proximity = float(_sensorsRangingMeasurementData.RangeMilliMeter) / 1000.0;
         _msg.header.stamp = ros::Time::now();
         return _msg;
     };
 
-    float pub()
-    {
-        _pub.publish(_msg);
-    }
+    float pub() { _pub.publish(_msg); }
 
-    float get_and_pub(){
+    float get_and_pub()
+    {
         get();
         pub();
     }
@@ -113,7 +111,6 @@ private:
     VL53L0X_Dev_t* _pSensor;
     VL53L0X_RangingMeasurementData_t _sensorsRangingMeasurementData;
     vl53l0x_driver::vl53l0x _msg;
-
 };
 
 } // namespace rapyuta

@@ -13,9 +13,9 @@ extern "C" {
 #include "vl53l0x_api.h"
 #include "vl53l0x_platform.h"
 
+#include "vl53l0x_driver/vl53l0x.h"
 #include <rr_hw_interface/gpio/mcp23017_gpio.hpp>
 #include <vl53l0x_driver/vl53l0x_driver.hpp>
-#include "vl53l0x_driver/vl53l0x.h"
 
 #define MCP_ADDRESS 0x20
 #define VL53L0X_DEFAULT_ADDR 0x29
@@ -38,13 +38,12 @@ int Sensor_Setup(std::vector<rapyuta::Vl53l0x<rapyuta::McpGpio, rapyuta::McpGpio
 
     i2c_vl53l0x = libsoc_i2c_init(i2c_bus_instance, VL53L0X_DEFAULT_ADDR);
     if (i2c_vl53l0x == NULL)
-       return -1;
+        return -1;
     ROS_INFO("ready to start sensor setup");
 
-    for (auto itr: sensors) {
-      itr->init(addr_reg, i2c_vl53l0x, i2c_bus_path, 
-       refSpadCount, isApertureSpads, VhvSettings, PhaseCal);
-    } 
+    for (auto itr : sensors) {
+        itr->init(addr_reg, i2c_vl53l0x, i2c_bus_path, refSpadCount, isApertureSpads, VhvSettings, PhaseCal);
+    }
 
     libsoc_i2c_free(i2c_vl53l0x);
     /* multi sensors init END */
@@ -76,15 +75,14 @@ int main(int argc, char** argv)
 
     std::vector<rapyuta::Vl53l0x<rapyuta::McpGpio, rapyuta::McpGpioBoardConfig>*> sensors;
     for (int i = 0; i < sensorNum; i++) {
-        sensors.push_back(new rapyuta::Vl53l0x<rapyuta::McpGpio, rapyuta::McpGpioBoardConfig>(
-          i, nh, topic_name+std::to_string(i+1), config));
+        sensors.push_back(new rapyuta::Vl53l0x<rapyuta::McpGpio, rapyuta::McpGpioBoardConfig>(i, nh, topic_name + std::to_string(i + 1), config));
     }
 
     ROS_INFO("Completed init from the vlxdriver code");
 
     if (Sensor_Setup(sensors) == 0) {
-        for (auto itr: sensors) {
-          itr->sensorCalibration();
+        for (auto itr : sensors) {
+            itr->sensorCalibration();
         }
         ros::AsyncSpinner spinner(sensorNum);
         spinner.start();
@@ -93,7 +91,7 @@ int main(int argc, char** argv)
         }
 
         ros::waitForShutdown();
-    } else{
+    } else {
         ROS_INFO("Sensor Setup failed");
     }
 
