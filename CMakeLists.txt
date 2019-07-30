@@ -24,11 +24,15 @@ generate_messages(DEPENDENCIES
    std_msgs
 )
 
-catkin_package(INCLUDE_DIRS inc
+catkin_package(
+  INCLUDE_DIRS include external/stm_vl530lx_lib/inc
   CATKIN_DEPENDS ${PKG_DEPS}
 )
 
-include_directories(inc ${catkin_INCLUDE_DIRS} )
+include_directories(
+  include
+  external/stm_vl530lx_lib/inc
+  ${catkin_INCLUDE_DIRS} )
 
 add_executable(measure_proximity_node
   src/vl53l0x_driver.cpp
