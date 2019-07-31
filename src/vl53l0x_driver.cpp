@@ -11,157 +11,92 @@ extern "C" {
 #include "mcp23017.h"
 }
 #include "vl53l0x_api.h"
-#include "vl53l0x_driver/vl53l0x.h"
 #include "vl53l0x_platform.h"
+
+#include "vl53l0x_driver/vl53l0x.h"
+#include <rr_hw_interface/gpio/mcp23017_gpio.hpp>
+#include <vl53l0x_driver/vl53l0x_driver.hpp>
 
 #define MCP_ADDRESS 0x20
 #define VL53L0X_DEFAULT_ADDR 0x29
-#define NUM_SENSORS 4
-#define FIELD_OF_VIEW 0.436332
-#define MIN_RANGE 0.03
-#define MAX_RANGE 2.0
 
-int VL53L0X_XSHUT_MCP23xx_IO[NUM_SENSORS];
-int VL53L0X_ADDR[NUM_SENSORS];
-VL53L0X_Dev_t Sensors[NUM_SENSORS];
-VL53L0X_Dev_t *pSensors[NUM_SENSORS];
-VL53L0X_RangingMeasurementData_t SensorsRangingMeasurementData[NUM_SENSORS];
-vl53l0x_driver::vl53l0x sensor_msg_array[NUM_SENSORS];
 int i2c_bus_instance;
 std::string i2c_bus_path;
-ros::Publisher sensor_pub_array[NUM_SENSORS];
-
-void initialize() {
-  for (int i = 0; i < NUM_SENSORS; i++) {
-    VL53L0X_XSHUT_MCP23xx_IO[i] = i;
-    pSensors[i] = &Sensors[i];
-    VL53L0X_ADDR[i] = (0x21 + i);
-  }
-}
 
 uint32_t refSpadCount;
 uint8_t isApertureSpads;
 uint8_t VhvSettings;
 uint8_t PhaseCal;
-i2c *i2c_mcp23017;
-i2c *i2c_vl53l0x;
+i2c* i2c_mcp23017;
+i2c* i2c_vl53l0x;
 
-int GPIO_Setup() {
-  i2c_mcp23017 = mcp23xx_init(i2c_bus_instance, MCP_ADDRESS);
-  if (i2c_mcp23017 == NULL)
-    return -1;
+int Sensor_Setup(std::vector<rapyuta::Vl53l0x<rapyuta::McpGpio, rapyuta::McpGpioBoardConfig>*> sensors)
+{
+    /* multi sensors init START */
+    uint8_t addr_reg[2] = {0};
+    addr_reg[0] = VL53L0X_REG_I2C_SLAVE_DEVICE_ADDRESS;
 
-  for (int i = 0; i < NUM_SENSORS; i++) {
-    mcp_pinMode(i2c_mcp23017, VL53L0X_XSHUT_MCP23xx_IO[i], OUTPUT);
-    mcp_digitalWrite(i2c_mcp23017, VL53L0X_XSHUT_MCP23xx_IO[i], LOW);
-  }
-  ROS_INFO("Finished GPIO_Setup");
-  return 0;
+    i2c_vl53l0x = libsoc_i2c_init(i2c_bus_instance, VL53L0X_DEFAULT_ADDR);
+    if (i2c_vl53l0x == NULL)
+        return -1;
+    ROS_INFO("Start sensor setup");
+
+    for (auto itr : sensors) {
+        itr->init(addr_reg, i2c_vl53l0x, i2c_bus_path, refSpadCount, isApertureSpads, VhvSettings, PhaseCal);
+        ROS_INFO("Setup No.%s", itr->get_name().c_str());
+    }
+
+    libsoc_i2c_free(i2c_vl53l0x);
+    /* multi sensors init END */
+    ROS_INFO("Finished Sensor_Setup");
+    return 0;
 }
 
-int Sensor_Setup() {
-  /* multi sensors init START */
-  uint8_t addr_reg[2] = {0};
-  addr_reg[0] = VL53L0X_REG_I2C_SLAVE_DEVICE_ADDRESS;
-
-  i2c_vl53l0x = libsoc_i2c_init(i2c_bus_instance, VL53L0X_DEFAULT_ADDR);
-  if (i2c_vl53l0x == NULL)
-    return -1;
-  for (int i = 0; i < NUM_SENSORS; i++) {
-    mcp_digitalWrite(i2c_mcp23017, VL53L0X_XSHUT_MCP23xx_IO[i], HIGH);
-    addr_reg[1] = VL53L0X_ADDR[i];
-    libsoc_i2c_write(i2c_vl53l0x, addr_reg, 2);
-    pSensors[i]->I2cDevAddr = VL53L0X_ADDR[i];
-    pSensors[i]->fd =
-        VL53L0X_i2c_init((char *)i2c_bus_path.c_str(), pSensors[i]->I2cDevAddr);
-    VL53L0X_DataInit(&Sensors[i]);
-    VL53L0X_StaticInit(&Sensors[i]);
-    VL53L0X_PerformRefCalibration(pSensors[i], &VhvSettings, &PhaseCal);
-    VL53L0X_PerformRefSpadManagement(pSensors[i], &refSpadCount,
-                                     &isApertureSpads);
-  }
-
-  libsoc_i2c_free(i2c_vl53l0x);
-  /* multi sensors init END */
-  ROS_INFO("Finished Sensor_Setup");
-  return 0;
+void measure_and_publish(rapyuta::Vl53l0x<rapyuta::McpGpio, rapyuta::McpGpioBoardConfig>* sensor)
+{
+    while (ros::ok() and sensor->checkDeviceConnection()) {
+        sensor->get_and_pub();
+        ros::spinOnce();
+    }
 }
 
-void Sensor_Calibration(VL53L0X_Dev_t *pDevice) {
-  VL53L0X_SetDeviceMode(pDevice, VL53L0X_DEVICEMODE_SINGLE_RANGING);
-  VL53L0X_SetLimitCheckEnable(pDevice, VL53L0X_CHECKENABLE_SIGMA_FINAL_RANGE,
-                              1);
-  VL53L0X_SetLimitCheckEnable(pDevice,
-                              VL53L0X_CHECKENABLE_SIGNAL_RATE_FINAL_RANGE, 1);
-  VL53L0X_SetLimitCheckValue(pDevice,
-                             VL53L0X_CHECKENABLE_SIGNAL_RATE_FINAL_RANGE,
-                             (FixPoint1616_t)(0.1 * 65536));
-  VL53L0X_SetLimitCheckValue(pDevice, VL53L0X_CHECKENABLE_SIGMA_FINAL_RANGE,
-                             (FixPoint1616_t)(60 * 65536));
-  VL53L0X_SetMeasurementTimingBudgetMicroSeconds(pDevice, 33000);
-  VL53L0X_SetVcselPulsePeriod(pDevice, VL53L0X_VCSEL_PERIOD_PRE_RANGE, 18);
-  VL53L0X_SetVcselPulsePeriod(pDevice, VL53L0X_VCSEL_PERIOD_FINAL_RANGE, 14);
-}
+int main(int argc, char** argv)
+{
+    ros::init(argc, argv, "vl53l0x_driver");
+    ros::NodeHandle nh("~");
 
-int check_device_connection(int _file_descriptor) {
-  struct stat device_status;
-  fstat(_file_descriptor, &device_status);
-  return device_status.st_nlink;
-}
+    int sensorNum = 0;
+    nh.getParam("sensor_num", sensorNum);
+    nh.getParam("i2c_bus_instance", i2c_bus_instance);
+    ROS_INFO("i2c_bus_instance: %d", i2c_bus_instance);
+    i2c_bus_path = "/dev/i2c-" + std::to_string(i2c_bus_instance);
+    std::string topic_name = "sensor_data_";
 
-void measure_and_publish(int sensor_num) {
-  while (ros::ok() and check_device_connection(pSensors[0]->fd)) {
-    VL53L0X_PerformSingleRangingMeasurement(
-        pSensors[sensor_num], &SensorsRangingMeasurementData[sensor_num]);
-    sensor_msg_array[sensor_num].proximity =
-        float(SensorsRangingMeasurementData[sensor_num].RangeMilliMeter) /
-        1000.0;
-    sensor_msg_array[sensor_num].header.stamp = ros::Time::now();
-    std::string frame = "sensor";
-    sensor_msg_array[sensor_num].header.frame_id =
-        frame + std::to_string(sensor_num + 1);
-    sensor_msg_array[sensor_num].field_of_view = FIELD_OF_VIEW;
-    sensor_msg_array[sensor_num].min_range = MIN_RANGE;
-    sensor_msg_array[sensor_num].max_range = MAX_RANGE;
-    sensor_pub_array[sensor_num].publish(sensor_msg_array[sensor_num]);
-    ros::spinOnce();
-  }
-}
+    rapyuta::McpGpioBoardConfig config(i2c_bus_instance, MCP_ADDRESS);
 
-int main(int argc, char **argv) {
-  initialize();
+    std::vector<rapyuta::Vl53l0x<rapyuta::McpGpio, rapyuta::McpGpioBoardConfig>*> sensors;
+    for (int i = 0; i < sensorNum; i++) {
+        sensors.push_back(new rapyuta::Vl53l0x<rapyuta::McpGpio, rapyuta::McpGpioBoardConfig>(i, nh, topic_name + std::to_string(i + 1), config));
+    }
 
-  ros::init(argc, argv, "vl53l0x_driver");
-  ros::NodeHandle nh;
-  nh.getParam("/measure_proximity_node/i2c_bus_instance", i2c_bus_instance);
-  ROS_INFO("i2c_bus_instance: %d", i2c_bus_instance);
-  i2c_bus_path = "/dev/i2c-" + std::to_string(i2c_bus_instance);
-  std::string name = "sensor_data_";
+    ROS_INFO("Completed init from the vlxdriver code");
 
-  if (GPIO_Setup() == 0) {
-    if (Sensor_Setup() == 0) {
-      for (int i = 0; i < NUM_SENSORS; i++) {
-        std::string result = name + std::to_string(i + 1);
-        sensor_pub_array[i] = nh.advertise<vl53l0x_driver::vl53l0x>(result, 10);
-        Sensor_Calibration(pSensors[i]);
-      }
-      ros::AsyncSpinner spinner(NUM_SENSORS);
-      spinner.start();
-      for (int i = 0; i < NUM_SENSORS; i++) {
-        boost::thread(boost::bind(measure_and_publish, i));
-      }
-      ros::waitForShutdown();
-    } else
-      ROS_INFO("Sensor Setup failed");
-  } else
-    ROS_INFO("GPIO Setup failed");
+    if (Sensor_Setup(sensors) == 0) {
+        for (auto itr : sensors) {
+            itr->sensorCalibration();
+        }
+        ros::AsyncSpinner spinner(sensorNum);
+        spinner.start();
+        for (int i = 0; i < sensorNum; i++) {
+            boost::thread(boost::bind(measure_and_publish, sensors[i]));
+        }
 
-  VL53L0X_i2c_close();
+        ros::waitForShutdown();
+    } else {
+        ROS_INFO("Sensor Setup failed");
+    }
 
-  // Power-off the sensors
-  for (int i = 0; i < NUM_SENSORS; i++) {
-    mcp_digitalWrite(i2c_mcp23017, VL53L0X_XSHUT_MCP23xx_IO[i], LOW);
-  }
-  mcp23xx_close(i2c_mcp23017);
-  return (0);
+    VL53L0X_i2c_close();
+
+    return (0);
 }
