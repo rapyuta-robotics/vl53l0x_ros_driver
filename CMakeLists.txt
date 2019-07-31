@@ -38,6 +38,8 @@ add_executable(measure_proximity_node
   src/vl53l0x_driver.cpp
 )
 
+add_dependencies(measure_proximity_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
 target_link_libraries(measure_proximity_node
   vl53l0x
   soc
