@@ -101,9 +101,7 @@ public:
         pub();
     }
 
-    std::string get_name(){
-        return _name;
-    }
+    std::string get_name() { return _name; }
 
 private:
     std::string _name;
