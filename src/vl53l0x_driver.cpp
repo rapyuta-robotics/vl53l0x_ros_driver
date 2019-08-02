@@ -42,7 +42,10 @@ int Sensor_Setup(std::vector<rapyuta::Vl53l0x<rapyuta::McpGpio, rapyuta::McpGpio
     ROS_INFO("Start sensor setup");
 
     for (auto itr : sensors) {
-        itr->init(addr_reg, i2c_vl53l0x, i2c_bus_path, refSpadCount, isApertureSpads, VhvSettings, PhaseCal);
+        if(itr->init(addr_reg, i2c_vl53l0x, i2c_bus_path, refSpadCount, isApertureSpads, VhvSettings, PhaseCal)<0){
+            ROS_FATAL("Setup Failure No.%s", itr->get_name().c_str());
+            return -1;
+        }
         ROS_INFO("Setup No.%s", itr->get_name().c_str());
     }
 
@@ -57,6 +60,9 @@ void measure_and_publish(rapyuta::Vl53l0x<rapyuta::McpGpio, rapyuta::McpGpioBoar
     while (ros::ok() and sensor->checkDeviceConnection()) {
         sensor->get_and_pub();
         ros::spinOnce();
+    }
+    if(ros::ok()){
+        ros::shutdown();
     }
 }
 
@@ -82,14 +88,20 @@ int main(int argc, char** argv)
     ROS_INFO("Completed init from the vlxdriver code");
 
     if (Sensor_Setup(sensors) == 0) {
+
+        ROS_INFO("Start sensor calibration");
         for (auto itr : sensors) {
-            itr->sensorCalibration();
+            if(itr->sensorCalibration()<0){
+                ROS_FATAL("Sensor Calibration Failure No.%s", itr->get_name().c_str());
+                return 0;
+            }
         }
-        ros::AsyncSpinner spinner(sensorNum);
-        spinner.start();
+        ROS_INFO("Finished sensor calibration");    
+
         for (int i = 0; i < sensorNum; i++) {
             boost::thread(boost::bind(measure_and_publish, sensors[i]));
         }
+        ROS_INFO("Start publishing sensor data");    
 
         ros::waitForShutdown();
     } else {
@@ -98,5 +110,5 @@ int main(int argc, char** argv)
 
     VL53L0X_i2c_close();
 
-    return (0);
+    return 0;
 }
