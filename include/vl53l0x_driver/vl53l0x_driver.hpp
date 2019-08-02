@@ -38,10 +38,9 @@ public:
             , _vl53l0xXshutMcp23xxIo(pin_num)
             , _vl53l0xAddr(0x21 + pin_num)
             , _i2c(_name, HI::Type::RR_HW_INTERFACE_INPUT)
+            , _config(config)
     {
         _pSensor = &_sensor;
-        _i2c.init(config);
-        _i2c.set(LOW);
         _pub = n.advertise<vl53l0x_driver::vl53l0x>(topic_name, 10);
 
         std::string frame = "sensor";
@@ -55,6 +54,10 @@ public:
     int8_t init(uint8_t* addr_reg, i2c* i2c_vl53l0x, std::string i2c_bus_path, uint32_t refSpadCount, uint8_t isApertureSpads, uint8_t VhvSettings,
             uint8_t PhaseCal)
     {
+        if(!_i2c.init(_config)){
+            return -1;
+        }
+        _i2c.set(LOW);
         _i2c.set(HIGH);
         addr_reg[1] = _vl53l0xAddr;
         libsoc_i2c_write(i2c_vl53l0x, addr_reg, 2);
@@ -113,6 +116,7 @@ public:
 private:
     std::string _name;
     HI _i2c;
+    Config _config;
     ros::Publisher _pub;
     int _vl53l0xXshutMcp23xxIo;
     int _vl53l0xAddr;
