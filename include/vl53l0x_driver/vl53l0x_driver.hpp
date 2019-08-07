@@ -38,10 +38,9 @@ public:
             , _vl53l0xXshutMcp23xxIo(pin_num)
             , _vl53l0xAddr(0x21 + pin_num)
             , _i2c(_name, HI::Type::RR_HW_INTERFACE_INPUT)
+            , _config(config)
     {
         _pSensor = &_sensor;
-        _i2c.init(config);
-        _i2c.set(LOW);
         _pub = n.advertise<vl53l0x_driver::vl53l0x>(topic_name, 10);
 
         std::string frame = "sensor";
@@ -52,30 +51,41 @@ public:
     };
     ~Vl53l0x() { _i2c.set(LOW); }
 
-    bool init(uint8_t* addr_reg, i2c* i2c_vl53l0x, std::string i2c_bus_path, uint32_t refSpadCount, uint8_t isApertureSpads, uint8_t VhvSettings,
+    int8_t init(uint8_t* addr_reg, i2c* i2c_vl53l0x, std::string i2c_bus_path, uint32_t refSpadCount, uint8_t isApertureSpads, uint8_t VhvSettings,
             uint8_t PhaseCal)
     {
+        if(!_i2c.init(_config)){
+            return -1;
+        }
+        _i2c.set(LOW);
         _i2c.set(HIGH);
         addr_reg[1] = _vl53l0xAddr;
         libsoc_i2c_write(i2c_vl53l0x, addr_reg, 2);
         _pSensor->I2cDevAddr = _vl53l0xAddr;
         _pSensor->fd = VL53L0X_i2c_init((char*) i2c_bus_path.c_str(), _pSensor->I2cDevAddr);
-        VL53L0X_DataInit(_pSensor);
-        VL53L0X_StaticInit(_pSensor);
-        VL53L0X_PerformRefCalibration(_pSensor, &VhvSettings, &PhaseCal);
-        VL53L0X_PerformRefSpadManagement(_pSensor, &refSpadCount, &isApertureSpads);
+
+        int8_t result = 0;
+        result += VL53L0X_DataInit(_pSensor);
+        result += VL53L0X_StaticInit(_pSensor);
+        result += VL53L0X_PerformRefCalibration(_pSensor, &VhvSettings, &PhaseCal);
+        result += VL53L0X_PerformRefSpadManagement(_pSensor, &refSpadCount, &isApertureSpads);
+
+        return result;
     };
 
-    void sensorCalibration()
+    int8_t sensorCalibration()
     {
-        VL53L0X_SetDeviceMode(_pSensor, VL53L0X_DEVICEMODE_SINGLE_RANGING);
-        VL53L0X_SetLimitCheckEnable(_pSensor, VL53L0X_CHECKENABLE_SIGMA_FINAL_RANGE, 1);
-        VL53L0X_SetLimitCheckEnable(_pSensor, VL53L0X_CHECKENABLE_SIGNAL_RATE_FINAL_RANGE, 1);
-        VL53L0X_SetLimitCheckValue(_pSensor, VL53L0X_CHECKENABLE_SIGNAL_RATE_FINAL_RANGE, (FixPoint1616_t)(0.1 * 65536));
-        VL53L0X_SetLimitCheckValue(_pSensor, VL53L0X_CHECKENABLE_SIGMA_FINAL_RANGE, (FixPoint1616_t)(60 * 65536));
-        VL53L0X_SetMeasurementTimingBudgetMicroSeconds(_pSensor, 33000);
-        VL53L0X_SetVcselPulsePeriod(_pSensor, VL53L0X_VCSEL_PERIOD_PRE_RANGE, 18);
-        VL53L0X_SetVcselPulsePeriod(_pSensor, VL53L0X_VCSEL_PERIOD_FINAL_RANGE, 14);
+        int8_t result = 0;
+        result += VL53L0X_SetDeviceMode(_pSensor, VL53L0X_DEVICEMODE_SINGLE_RANGING);
+        result += VL53L0X_SetLimitCheckEnable(_pSensor, VL53L0X_CHECKENABLE_SIGMA_FINAL_RANGE, 1);
+        result += VL53L0X_SetLimitCheckEnable(_pSensor, VL53L0X_CHECKENABLE_SIGNAL_RATE_FINAL_RANGE, 1);
+        result += VL53L0X_SetLimitCheckValue(_pSensor, VL53L0X_CHECKENABLE_SIGNAL_RATE_FINAL_RANGE, (FixPoint1616_t)(0.1 * 65536));
+        result += VL53L0X_SetLimitCheckValue(_pSensor, VL53L0X_CHECKENABLE_SIGMA_FINAL_RANGE, (FixPoint1616_t)(60 * 65536));
+        result += VL53L0X_SetMeasurementTimingBudgetMicroSeconds(_pSensor, 33000);
+        result += VL53L0X_SetVcselPulsePeriod(_pSensor, VL53L0X_VCSEL_PERIOD_PRE_RANGE, 18);
+        result += VL53L0X_SetVcselPulsePeriod(_pSensor, VL53L0X_VCSEL_PERIOD_FINAL_RANGE, 14);
+
+        return result;
     }
 
     int checkDeviceConnection()
@@ -106,6 +116,7 @@ public:
 private:
     std::string _name;
     HI _i2c;
+    Config _config;
     ros::Publisher _pub;
     int _vl53l0xXshutMcp23xxIo;
     int _vl53l0xAddr;
