@@ -4,7 +4,7 @@
 
 1. [Install ROS Melodic](http://wiki.ros.org/melodic/Installation/Ubuntu) and the following build tools.
 
-        sudo apt-get install python-wstool python-catkin-tools 
+        sudo apt-get install python-wstool python-catkin-tools i2c-tools 
 	
 1. Re-use or create a catkin workspace:
 
