@@ -1,0 +1,1 @@
+SUBSYSTEM=="i2c-dev", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="c631", MODE:="0666", GROUP:="plugdev", SYMLINK+="proximity_sensor" 

@@ -27,6 +27,9 @@
         make
         make install
 
+1. Copy the rules for proximity sensor
+	sudo cp 60-i2c-tiny-proximity.rules /lib/udev/rules.d/
+
 1. Configure and build the workspace:
 
         cd $CATKIN_WS
