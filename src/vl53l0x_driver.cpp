@@ -7,6 +7,9 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+extern "C" {
+#include "mcp23017.h"
+}
 #include "vl53l0x_api.h"
 #include "vl53l0x_platform.h"
 
