@@ -87,7 +87,7 @@ int main(int argc, char** argv)
     
     ROS_INFO("i2c_bus_instance: %d", i2c_bus_instance);
     i2c_bus_path = "/dev/i2c-" + std::to_string(i2c_bus_instance);
-    std::string topic_name = "sensor_data_";
+    std::string topic_name = "sensor_data";
     rapyuta::Vl53l0x *sensors = new rapyuta::Vl53l0x(nh, topic_name);
 
     ROS_INFO("Completed init from the vlxdriver code");
