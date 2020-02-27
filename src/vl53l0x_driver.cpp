@@ -14,7 +14,7 @@ extern "C" {
 #include "vl53l0x_platform.h"
 
 #include "vl53l0x_driver/vl53l0x.h"
-#include <rr_hw_interface/gpio/mcp23017_gpio.hpp>
+#include <low_level_interfaces/gpio/mcp23017_gpio.hpp>
 #include <vl53l0x_driver/vl53l0x_driver.hpp>
 
 #define MCP_ADDRESS 0x20
