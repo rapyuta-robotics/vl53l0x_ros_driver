@@ -9,7 +9,7 @@ set(PKG_DEPS
   roscpp
   std_msgs
   message_generation
-  rr_hw_interface
+  low_level_interfaces
 )
 
 
