@@ -20,6 +20,8 @@ extern "C" {
 #define MCP_ADDRESS 0x20
 #define VL53L0X_DEFAULT_ADDR 0x29
 
+const static std::string LOGNAME = "vl53l0x_driver";
+
 int i2c_bus_instance;
 std::string i2c_bus_path;
 
@@ -39,19 +41,19 @@ int Sensor_Setup(std::vector<rapyuta::Vl53l0x<rapyuta::McpGpio, rapyuta::McpGpio
     i2c_vl53l0x = libsoc_i2c_init(i2c_bus_instance, VL53L0X_DEFAULT_ADDR);
     if (i2c_vl53l0x == NULL)
         return -1;
-    ROS_INFO("Start sensor setup");
+    ROS_INFO_NAMED(LOGNAME, "Start sensor setup");
 
     for (auto itr : sensors) {
         if (itr->init(addr_reg, i2c_vl53l0x, i2c_bus_path, refSpadCount, isApertureSpads, VhvSettings, PhaseCal) < 0) {
-            ROS_FATAL("Setup Failure No.%s", itr->get_name().c_str());
+            ROS_FATAL_NAMED(LOGNAME, "Setup Failure No.%s", itr->get_name().c_str());
             return -1;
         }
-        ROS_INFO("Setup No.%s", itr->get_name().c_str());
+        ROS_INFO_NAMED(LOGNAME, "Setup No.%s", itr->get_name().c_str());
     }
 
     libsoc_i2c_free(i2c_vl53l0x);
     /* multi sensors init END */
-    ROS_INFO("Finished Sensor_Setup");
+    ROS_INFO_NAMED(LOGNAME, "Finished Sensor_Setup");
     return 0;
 }
 
@@ -74,7 +76,7 @@ int main(int argc, char** argv)
     int sensorNum = 0;
     nh.getParam("sensor_num", sensorNum);
     nh.getParam("i2c_bus_instance", i2c_bus_instance);
-    ROS_INFO("i2c_bus_instance: %d", i2c_bus_instance);
+    ROS_INFO_NAMED(LOGNAME, "i2c_bus_instance: %d", i2c_bus_instance);
     i2c_bus_path = "/dev/i2c-" + std::to_string(i2c_bus_instance);
     std::string topic_name = "sensor_data_";
 
@@ -85,27 +87,27 @@ int main(int argc, char** argv)
         sensors.push_back(new rapyuta::Vl53l0x<rapyuta::McpGpio, rapyuta::McpGpioBoardConfig>(i, nh, topic_name + std::to_string(i + 1), config));
     }
 
-    ROS_INFO("Completed init from the vlxdriver code");
+    ROS_INFO_NAMED(LOGNAME, "Completed init from the vlxdriver code");
 
     if (Sensor_Setup(sensors) == 0) {
 
-        ROS_INFO("Start sensor calibration");
+        ROS_INFO_NAMED(LOGNAME, "Start sensor calibration");
         for (auto itr : sensors) {
             if (itr->sensorCalibration() < 0) {
-                ROS_FATAL("Sensor Calibration Failure No.%s", itr->get_name().c_str());
+                ROS_FATAL_NAMED(LOGNAME, "Sensor Calibration Failure No.%s", itr->get_name().c_str());
                 return 0;
             }
         }
-        ROS_INFO("Finished sensor calibration");
+        ROS_INFO_NAMED(LOGNAME, "Finished sensor calibration");
 
         for (int i = 0; i < sensorNum; i++) {
             boost::thread(boost::bind(measure_and_publish, sensors[i]));
         }
-        ROS_INFO("Start publishing sensor data");
+        ROS_INFO_NAMED(LOGNAME, "Start publishing sensor data");
 
         ros::waitForShutdown();
     } else {
-        ROS_INFO("Sensor Setup failed");
+        ROS_INFO_NAMED(LOGNAME, "Sensor Setup failed");
     }
 
     VL53L0X_i2c_close();
