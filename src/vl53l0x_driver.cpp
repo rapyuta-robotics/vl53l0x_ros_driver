@@ -13,7 +13,7 @@ extern "C" {
 #include "vl53l0x_api.h"
 #include "vl53l0x_platform.h"
 
-#include "vl53l0x_driver/vl53l0x.h"
+#include "vl53l0x_driver/Vl53l0xData.h"
 #include <low_level_interfaces/gpio/mcp23017_gpio.hpp>
 #include <vl53l0x_driver/vl53l0x_driver.hpp>
 

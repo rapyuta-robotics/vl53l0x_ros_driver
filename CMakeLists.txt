@@ -17,7 +17,7 @@ find_package(catkin REQUIRED COMPONENTS ${PKG_DEPS}
 )
 
 add_message_files(FILES
-  vl53l0x.msg
+  Vl53l0xData.msg
 )
 
 generate_messages(DEPENDENCIES
