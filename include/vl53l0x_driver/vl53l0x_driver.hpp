@@ -44,7 +44,7 @@ public:
         _pub = n.advertise<vl53l0x_driver::vl53l0x>(topic_name, 10);
 
         std::string frame = "sensor";
-        _msg.header.frame_id = frame + std::to_string(pin_num + 1);
+        _msg.header.frame_id = frame + std::to_string(pin_num);
         _msg.field_of_view = FIELD_OF_VIEW;
         _msg.min_range = MIN_RANGE;
         _msg.max_range = MAX_RANGE;
@@ -103,9 +103,9 @@ public:
         return _msg;
     };
 
-    float pub() { _pub.publish(_msg); }
+    void pub() { _pub.publish(_msg); }
 
-    float get_and_pub()
+    void get_and_pub()
     {
         get();
         pub();

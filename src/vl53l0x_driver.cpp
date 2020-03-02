@@ -78,13 +78,13 @@ int main(int argc, char** argv)
     nh.getParam("i2c_bus_instance", i2c_bus_instance);
     ROS_INFO_NAMED(LOGNAME, "i2c_bus_instance: %d", i2c_bus_instance);
     i2c_bus_path = "/dev/i2c-" + std::to_string(i2c_bus_instance);
-    std::string topic_name = "sensor_data_";
+    std::string topic_name = "vl53l0x_";
 
     rapyuta::McpGpioBoardConfig config(i2c_bus_instance, MCP_ADDRESS);
 
     std::vector<rapyuta::Vl53l0x<rapyuta::McpGpio, rapyuta::McpGpioBoardConfig>*> sensors;
     for (int i = 0; i < sensorNum; i++) {
-        sensors.push_back(new rapyuta::Vl53l0x<rapyuta::McpGpio, rapyuta::McpGpioBoardConfig>(i, nh, topic_name + std::to_string(i + 1), config));
+        sensors.emplace_back(new rapyuta::Vl53l0x<rapyuta::McpGpio, rapyuta::McpGpioBoardConfig>(i, nh, topic_name + std::to_string(i), config));
     }
 
     ROS_INFO_NAMED(LOGNAME, "Completed init from the vlxdriver code");
