@@ -15,7 +15,7 @@ extern "C" {
 #include "vl53l0x_api.h"
 #include "vl53l0x_platform.h"
 
-#include "vl53l0x_driver/vl53l0x.h"
+#include "vl53l0x_driver/Vl53l0xData.h"
 #include <low_level_interfaces/gpio/mcp23017_gpio.hpp>
 
 #define FIELD_OF_VIEW 0.436332
@@ -41,10 +41,10 @@ public:
             , _config(config)
     {
         _pSensor = &_sensor;
-        _pub = n.advertise<vl53l0x_driver::vl53l0x>(topic_name, 10);
+        _pub = n.advertise<vl53l0x_driver::Vl53l0xData>(topic_name, 10);
 
         std::string frame = "sensor";
-        _msg.header.frame_id = frame + std::to_string(pin_num + 1);
+        _msg.header.frame_id = frame + std::to_string(pin_num);
         _msg.field_of_view = FIELD_OF_VIEW;
         _msg.min_range = MIN_RANGE;
         _msg.max_range = MAX_RANGE;
@@ -95,7 +95,7 @@ public:
         return device_status.st_nlink;
     }
 
-    vl53l0x_driver::vl53l0x get()
+    vl53l0x_driver::Vl53l0xData get()
     {
         VL53L0X_PerformSingleRangingMeasurement(_pSensor, &_sensorsRangingMeasurementData);
         _msg.proximity = float(_sensorsRangingMeasurementData.RangeMilliMeter) / 1000.0;
@@ -103,9 +103,9 @@ public:
         return _msg;
     };
 
-    float pub() { _pub.publish(_msg); }
+    void pub() { _pub.publish(_msg); }
 
-    float get_and_pub()
+    void get_and_pub()
     {
         get();
         pub();
@@ -123,7 +123,7 @@ private:
     VL53L0X_Dev_t _sensor;
     VL53L0X_Dev_t* _pSensor;
     VL53L0X_RangingMeasurementData_t _sensorsRangingMeasurementData;
-    vl53l0x_driver::vl53l0x _msg;
+    vl53l0x_driver::Vl53l0xData _msg;
 };
 
 } // namespace rapyuta
