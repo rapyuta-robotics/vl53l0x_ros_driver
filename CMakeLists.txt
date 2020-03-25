@@ -9,7 +9,6 @@ set(PKG_DEPS
   roscpp
   std_msgs
   message_generation
-  rr_hw_interface
 )
 
 
@@ -42,6 +41,5 @@ add_dependencies(measure_proximity_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${ca
 
 target_link_libraries(measure_proximity_node
   vl53l0x
-  soc
   ${catkin_LIBRARIES}
 )

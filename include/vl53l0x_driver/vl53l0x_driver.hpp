@@ -8,6 +8,9 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <fcntl.h>              //Needed for I2C port
+#include <sys/ioctl.h>          //Needed for I2C port
+#include <linux/i2c-dev.h>      //Needed for I2C port
 
 // extern "C" {
 // #include "mcp23017.h"
@@ -21,7 +24,7 @@
 #define FIELD_OF_VIEW 0.436332
 #define MIN_RANGE 0.03
 #define MAX_RANGE 1.2
-
+#define VL53L0X_DEFAULT_ADDR 0x29
 namespace rapyuta
 {
 
@@ -46,7 +49,7 @@ public:
     ~Vl53l0x() { 
     }
 
-    int8_t init(uint8_t* addr_reg, i2c* i2c_vl53l0x, std::string i2c_bus_path, uint32_t refSpadCount, uint8_t isApertureSpads, uint8_t VhvSettings,
+    int8_t init(uint8_t* addr_reg, int i2c_vl53l0x, std::string i2c_bus_path, uint32_t refSpadCount, uint8_t isApertureSpads, uint8_t VhvSettings,
             uint8_t PhaseCal)
     {
         // if(!_i2c.init(_config)){
@@ -54,8 +57,16 @@ public:
         // }
         // _i2c.set(LOW);
         // _i2c.set(HIGH);
+
         addr_reg[1] = _vl53l0xAddr;
-        libsoc_i2c_write(i2c_vl53l0x, addr_reg, 2);
+
+        if (ioctl(i2c_vl53l0x, I2C_SLAVE, VL53L0X_DEFAULT_ADDR) < 0)
+        {
+            printf("Failed to acquire bus access and/or talk to Vl53l0x.\n");
+            return -1;
+        }
+        
+        write(i2c_vl53l0x, addr_reg, 2);
         _pSensor->I2cDevAddr = _vl53l0xAddr;
         _pSensor->fd = VL53L0X_i2c_init((char*) i2c_bus_path.c_str(), _pSensor->I2cDevAddr);
 

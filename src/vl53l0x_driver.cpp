@@ -7,17 +7,12 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-extern "C" {
-#include "mcp23017.h"
-}
 #include "vl53l0x_api.h"
 #include "vl53l0x_platform.h"
 
 #include "vl53l0x_driver/vl53l0x.h"
 
 #include <vl53l0x_driver/vl53l0x_driver.hpp>
-
-#define VL53L0X_DEFAULT_ADDR 0x29
 
 int i2c_bus_instance;
 std::string i2c_bus_path;
@@ -27,15 +22,15 @@ uint8_t isApertureSpads;
 uint8_t VhvSettings;
 uint8_t PhaseCal;
 
-i2c* i2c_vl53l0x;
+int i2c_vl53l0x;
 
 int Sensor_Setup(rapyuta::Vl53l0x *sensors)
 {
     /* multi sensors init START */
     uint8_t addr_reg[2] = {0};
     addr_reg[0] = VL53L0X_REG_I2C_SLAVE_DEVICE_ADDRESS;
-    i2c_vl53l0x = libsoc_i2c_init(i2c_bus_instance, VL53L0X_DEFAULT_ADDR);
-    if (i2c_vl53l0x == NULL)
+    i2c_vl53l0x = open(i2c_bus_path.c_str(), O_RDWR);
+    if (i2c_vl53l0x < 0)
         return -1;
     ROS_INFO("Start sensor setup");
 
@@ -45,11 +40,7 @@ int Sensor_Setup(rapyuta::Vl53l0x *sensors)
         return -1;
     }
     ROS_INFO("Setup Done");
-    
 
-    libsoc_i2c_free(i2c_vl53l0x);
-    /* multi sensors init END */
-    ROS_INFO("Finished Sensor_Setup");
     return 0;
 }
 
