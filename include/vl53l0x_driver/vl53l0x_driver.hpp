@@ -12,14 +12,10 @@
 #include <sys/ioctl.h>          //Needed for I2C port
 #include <linux/i2c-dev.h>      //Needed for I2C port
 
-// extern "C" {
-// #include "mcp23017.h"
-// }
 #include "vl53l0x_api.h"
 #include "vl53l0x_platform.h"
 
 #include "vl53l0x_driver/vl53l0x.h"
-// #include <rr_hw_interface/gpio/mcp23017_gpio.hpp>
 
 #define FIELD_OF_VIEW 0.436332
 #define MIN_RANGE 0.03
